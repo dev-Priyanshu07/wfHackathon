@@ -1,19 +1,53 @@
-import express ,{json,urlencoded} from 'express';
-import router from './routes';
-import  errorHandler from "./errorMiddleware";
-import dotenv from 'dotenv';
+// oracle-service/src/app.ts
+import express from "express";
+import bodyParser from "body-parser";
+import dotenv from "dotenv";
+import { getRiskForWallet } from "./services/riskService";
 
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT;
+app.use(bodyParser.json());
 
-app.use(json())
-app.use(urlencoded({ extended: true }));
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 
-app.use("/oracle", router);
-app.use(errorHandler);
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok", time: new Date().toISOString() });
+});
 
-app.listen(port, () => {
-    console.log(`Server is listening on port ${port}`);
+/**
+ * GET /risk/:wallet
+ * Return risk for wallet address (calls riskService)
+ */
+app.get("/risk/:wallet", async (req, res) => {
+  const wallet = String(req.params.wallet || "").trim();
+  if (!wallet) return res.status(400).json({ error: "wallet address required" });
+  try {
+    const result = await getRiskForWallet(wallet);
+    return res.json(result);
+  } catch (err) {
+    console.error("GET /risk error:", err);
+    return res.status(500).json({ error: "internal error", detail: String(err) });
+  }
+});
+
+/**
+ * POST /risk
+ * JSON body: { wallet: "..." }
+ */
+app.post("/risk", async (req, res) => {
+  const wallet: string = (req.body?.wallet || "").trim();
+  if (!wallet) return res.status(400).json({ error: "wallet address required in body" });
+  try {
+    const result = await getRiskForWallet(wallet);
+    return res.json(result);
+  } catch (err) {
+    console.error("POST /risk error:", err);
+    return res.status(500).json({ error: "internal error", detail: String(err) });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Oracle service listening on port ${PORT}`);
+  console.log(`Risk threshold (non-compliant if >=): ${process.env.RISK_THRESHOLD || "7"}`);
 });

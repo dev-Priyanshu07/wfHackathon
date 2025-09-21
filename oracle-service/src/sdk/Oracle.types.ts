@@ -4,6 +4,8 @@
 * and run the @cosmwasm/ts-codegen generate command to regenerate this file.
 */
 
+import { time } from "console";
+
 export type Binary = string;
 export interface InstantiateMsg {
   oracle_key_type: string;
@@ -23,14 +25,21 @@ export type ExecuteMsg = {
     new_key_type?: string | null;
     new_pubkey: Binary;
   };
+} | {UpdateRisk:{
+  wallet: string;
+  risk_score: number;
+  compliant: boolean;
+  timestamp: string;
+  reason?: string[] | null;
 };
+}
 export type QueryMsg = {
   get_oracle_data: {};
 } | {
   get_oracle_pubkey: {};
 } | {
   get_admin: {};
-};
+} | {GetRisk:{wallet: string;};}
 export type Addr = string;
 export interface AdminResponse {
   admin: Addr;

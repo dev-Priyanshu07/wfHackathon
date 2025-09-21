@@ -1,6 +1,8 @@
 use cosmwasm_schema::QueryResponses;
 use cosmwasm_std::{Addr, Binary};
-use sha2::{Sha256, Digest};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct OracleDataResponse {
     pub data: Option<String>,
@@ -16,8 +18,6 @@ pub struct OraclePubkeyResponse {
 pub struct AdminResponse {
     pub admin: Addr,
 }
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -31,6 +31,14 @@ pub enum ExecuteMsg {
     Send { recipient: String },
     OracleDataUpdate { data: String, signature: Binary },
     UpdateOracle { new_pubkey: Binary, new_key_type: Option<String> },
+
+    // NEW risk-scoring execute
+    UpdateRisk {
+        wallet: String,
+        risk: u8,
+        compliant: bool,
+        timestamp: Option<String>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -46,4 +54,23 @@ pub enum QueryMsg {
     /// Returns: AdminResponse
     #[returns(AdminResponse)]
     GetAdmin {},
+
+    // NEW risk-scoring query
+    /// Returns: RiskResponse
+    #[returns(RiskResponse)]
+    GetRisk { wallet: String },
+
+    // NEW: expose current oracle addr
+    #[returns(String)]
+    GetOracle {},
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct RiskResponse {
+    pub wallet: String,
+    pub risk: Option<u8>,
+    pub compliant: Option<bool>,
+    pub timestamp: Option<String>,
+    pub source: Option<String>,
+    pub reason: Option<Vec<String>>,
 }
